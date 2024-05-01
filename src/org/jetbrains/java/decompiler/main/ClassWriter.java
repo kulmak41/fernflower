@@ -308,18 +308,22 @@ public class ClassWriter {
       .toList();
   }
 
-  private static boolean isSyntheticRecordConstructor(StructClass cl, StructMethod mt, TextBuffer code, MethodDescriptor md, boolean init) {
+  private static boolean isSyntheticRecordConstructor(StructClass cl, StructMethod mt, TextBuffer code, MethodDescriptor md, boolean init, boolean hasTypeAnnotations) {
     List<StructRecordComponent> recordComponents = cl.getRecordComponents();
     if (recordComponents == null) {
       return false;
     }
-    if (!init || !getAnnotations(mt).isEmpty()) {
+    // to be on the safe side consider only the case when the constructor and the components do not have annotations
+    if (!init || hasTypeAnnotations || !getAnnotations(mt).isEmpty() || !getParamAnnotations(mt).isEmpty()) {
+      return false;
+    }
+    boolean someComponentHasAnnotation = recordComponents.stream().anyMatch(x -> !getAnnotations(x).isEmpty());
+    if (someComponentHasAnnotation) {
       return false;
     }
 
     StructMethodParametersAttribute paramsAttribute = mt.getAttribute(StructGeneralAttribute.ATTRIBUTE_METHOD_PARAMETERS);
     List<StructMethodParametersAttribute.Entry> params = paramsAttribute.getEntries();
-    List<List<AnnotationExprent>> paramAnnotations = getParamAnnotations(mt);
 
     if (params.size() != recordComponents.size()) {
       return false;
@@ -327,10 +331,8 @@ public class ClassWriter {
 
     for (int i = 0; i < params.size(); ++i) {
       StructRecordComponent component = recordComponents.get(i);
-      List<AnnotationExprent> componentAnnotations = getAnnotations(component);
-      if (!params.get(i).myName.equals(component.getName()) ||
-          !paramAnnotations.get(i).equals(componentAnnotations) ||
-          !md.params[i].toString().equals(component.getDescriptor())) {
+      if (!component.getName().equals(params.get(i).myName) ||
+          !component.getDescriptor().equals(md.params[i].toString())) {
         return false;
       }
     }
@@ -353,7 +355,7 @@ public class ClassWriter {
   }
 
   @SuppressWarnings("SpellCheckingInspection")
-  private static boolean isSyntheticRecordMethod(StructClass cl, StructMethod mt, TextBuffer code) {
+  private static boolean isSyntheticRecordMethod(StructClass cl, StructMethod mt, TextBuffer code, boolean hasTypeAnnotations) {
     List<StructRecordComponent> recordComponents = cl.getRecordComponents();
     if (recordComponents == null) {
       return false;
@@ -371,19 +373,20 @@ public class ClassWriter {
       }
     }
 
-    // check for a component getter
+    // check for a getter for a component
+    // to be on the safe side consider only the case when the getter and the component do not have annotations
+    if (hasTypeAnnotations || !getAnnotations(mt).isEmpty()) {
+      return false;
+    }
     Optional<StructRecordComponent> optionalComponent = recordComponents.stream().filter(x -> x.getName().equals(name)).findFirst();
     if (optionalComponent.isEmpty()) {
       return false;
     }
     StructRecordComponent component = optionalComponent.get();
-    if (!descriptor.equals("()" + component.getDescriptor())) {
+    if (!getAnnotations(component).isEmpty()) {
       return false;
     }
-
-    List<AnnotationExprent> componentAnnotations = getAnnotations(component);
-    List<AnnotationExprent> methodAnnotations = getAnnotations(mt);
-    if (!componentAnnotations.equals(methodAnnotations)) {
+    if (!descriptor.equals("()" + component.getDescriptor())) {
       return false;
     }
 
@@ -961,7 +964,8 @@ public class ClassWriter {
 
             hideMethod = code.length() == 0 &&
               (clInit || dInit || hideConstructor(node, !typeAnnotations.isEmpty(), init, throwsExceptions, paramCount, flags)) ||
-              isSyntheticRecordConstructor(cl, mt, code, md, init) || isSyntheticRecordMethod(cl, mt, code);
+              isSyntheticRecordConstructor(cl, mt, code, md, init, !typeAnnotations.isEmpty()) ||
+              isSyntheticRecordMethod(cl, mt, code, !typeAnnotations.isEmpty());
 
             buffer.append(code);
 
