@@ -1,0 +1,58 @@
+package records;
+
+public record TestRecordSyntheticMethods(Integer a, Double b, Boolean c) {
+   public TestRecordSyntheticMethods(String var1, String var2, String var3) {
+      this(Integer.parseInt(var1), Double.parseDouble(var2), Boolean.parseBoolean(var3));// 12
+   }// 13
+
+   public TestRecordSyntheticMethods(Integer var1) {
+      this(var1, 2.0 * (double)var1, false);// 15
+   }// 16
+
+   @M
+   public Integer a() {
+      return this.a;// 20
+   }
+
+   public @TA Boolean c() {
+      return this.c;// 24
+   }
+}
+
+class 'records/TestRecordSyntheticMethods' {
+   method '<init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V' {
+      2      4
+      9      4
+      10      4
+      16      4
+      19      5
+   }
+
+   method '<init> (Ljava/lang/Integer;)V' {
+      2      8
+      6      8
+      9      8
+      a      8
+      e      8
+      12      8
+      15      9
+   }
+
+   method 'a ()Ljava/lang/Integer;' {
+      1      13
+      4      13
+   }
+
+   method 'c ()Ljava/lang/Boolean;' {
+      1      17
+      4      17
+   }
+}
+
+Lines mapping:
+12 <-> 5
+13 <-> 6
+15 <-> 9
+16 <-> 10
+20 <-> 14
+24 <-> 18

@@ -176,16 +176,11 @@ public class SingleClassesTest {
   @Test public void testNamedSuspendFun2Kt() { doTest("pkg/TestNamedSuspendFun2Kt"); }
   @Test public void testGenericArgs() { doTest("pkg/TestGenericArgs"); }
   @Test public void testRecordEmpty() { doTest("records/TestRecordEmpty"); }
-  @Test public void testRecordSimple() {
-    doTest("records/TestRecordSimple");
-  }
-//  @Test
-//  public void testMyRecord() {
-//    doTest("records/MyRecord");
-//  }
+  @Test public void testRecordSimple() { doTest("records/TestRecordSimple"); }
   @Test public void testRecordVararg() { doTest("records/TestRecordVararg"); }
   @Test public void testRecordGenericVararg() { doTest("records/TestRecordGenericVararg"); }
   @Test public void testRecordAnno() { doTest("records/TestRecordAnno"); }
+  @Test public void testRecordSyntheticMethods() { doTest("records/TestRecordSyntheticMethods"); }
   @Test public void testRootWithClassInner() { doTest("sealed/RootWithClassInner"); }
   @Test public void testRootWithInterfaceInner() { doTest("sealed/RootWithInterfaceInner"); }
   @Test public void testRootWithClassOuter() { doTest("sealed/RootWithClassOuter",

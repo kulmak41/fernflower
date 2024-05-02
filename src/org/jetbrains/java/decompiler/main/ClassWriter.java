@@ -323,6 +323,9 @@ public class ClassWriter {
     }
 
     StructMethodParametersAttribute paramsAttribute = mt.getAttribute(StructGeneralAttribute.ATTRIBUTE_METHOD_PARAMETERS);
+    if (paramsAttribute == null) {
+      return false;
+    }
     List<StructMethodParametersAttribute.Entry> params = paramsAttribute.getEntries();
 
     if (params.size() != recordComponents.size()) {
