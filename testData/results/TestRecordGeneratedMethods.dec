@@ -1,25 +1,25 @@
 package records;
 
-public record TestRecordSyntheticMethods(Integer a, Double b, Boolean c) {
-   public TestRecordSyntheticMethods(String var1, String var2, String var3) {
+public record TestRecordGeneratedMethods(Integer a, Double b, Boolean c) {
+   public TestRecordGeneratedMethods(String var1, String var2, String var3) {
       this(Integer.parseInt(var1), Double.parseDouble(var2), Boolean.parseBoolean(var3));// 12
    }// 13
 
-   public TestRecordSyntheticMethods(Integer var1) {
-      this(var1, 2.0 * (double)var1, false);// 15
-   }// 16
+   public TestRecordGeneratedMethods(Integer var1) {
+      this(var1, 2.0 * (double)var1, false);// 16
+   }// 17
 
    @M
    public Integer a() {
-      return this.a;// 20
+      return this.a;// 21
    }
 
    public @TA Boolean c() {
-      return this.c;// 24
+      return this.c;// 25
    }
 }
 
-class 'records/TestRecordSyntheticMethods' {
+class 'records/TestRecordGeneratedMethods' {
    method '<init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V' {
       2      4
       9      4
@@ -52,7 +52,7 @@ class 'records/TestRecordSyntheticMethods' {
 Lines mapping:
 12 <-> 5
 13 <-> 6
-15 <-> 9
-16 <-> 10
-20 <-> 14
-24 <-> 18
+16 <-> 9
+17 <-> 10
+21 <-> 14
+25 <-> 18
