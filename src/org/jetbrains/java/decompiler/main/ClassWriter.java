@@ -32,7 +32,6 @@ import org.jetbrains.java.decompiler.struct.gen.generics.*;
 import org.jetbrains.java.decompiler.util.InterpreterUtil;
 import org.jetbrains.java.decompiler.util.TextBuffer;
 
-import java.lang.reflect.RecordComponent;
 import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -308,7 +307,23 @@ public class ClassWriter {
       .toList();
   }
 
-  private static boolean isSyntheticRecordConstructor(StructClass cl, StructMethod mt, TextBuffer code, MethodDescriptor md, boolean init, boolean hasTypeAnnotations) {
+  @SuppressWarnings("SpellCheckingInspection")
+  private static boolean isSyntheticRecordMethod(StructClass cl, StructMethod mt, TextBuffer code) {
+    if (cl.getRecordComponents() != null) {
+      String name = mt.getName(), descriptor = mt.getDescriptor();
+      if (name.equals("equals") && descriptor.equals("(Ljava/lang/Object;)Z") ||
+        name.equals("hashCode") && descriptor.equals("()I") ||
+        name.equals("toString") && descriptor.equals("()Ljava/lang/String;")) {
+        if (code.countLines() == 1) {
+          String str = code.toString().trim();
+          return str.startsWith("return this." + name + "<invokedynamic>(this");
+        }
+      }
+    }
+    return false;
+  }
+
+  private static boolean isGeneratedRecordConstructor(StructClass cl, StructMethod mt, TextBuffer code, MethodDescriptor md, boolean init, boolean hasTypeAnnotations) {
     List<StructRecordComponent> recordComponents = cl.getRecordComponents();
     if (recordComponents == null) {
       return false;
@@ -350,33 +365,15 @@ public class ClassWriter {
             return false;
         }
     }
-    if (scanner.hasNext()) {
-      return false;
-    }
-
-    return true;
+    return !scanner.hasNext();
   }
 
-  @SuppressWarnings("SpellCheckingInspection")
-  private static boolean isSyntheticRecordMethod(StructClass cl, StructMethod mt, TextBuffer code, boolean hasTypeAnnotations) {
+  private static boolean isGeneratedRecordAccessor(StructClass cl, StructMethod mt, TextBuffer code, boolean hasTypeAnnotations) {
     List<StructRecordComponent> recordComponents = cl.getRecordComponents();
     if (recordComponents == null) {
       return false;
     }
-
     String name = mt.getName(), descriptor = mt.getDescriptor();
-
-    // check for equals, hashcode, toString
-    if (name.equals("equals") && descriptor.equals("(Ljava/lang/Object;)Z") ||
-        name.equals("hashCode") && descriptor.equals("()I") ||
-        name.equals("toString") && descriptor.equals("()Ljava/lang/String;")) {
-      if (code.countLines() == 1) {
-        String str = code.toString().trim();
-        return str.startsWith("return this." + name + "<invokedynamic>(this");
-      }
-    }
-
-    // check for a getter for a component
     // to be on the safe side consider only the case when the getter and the component do not have annotations
     if (hasTypeAnnotations || !getAnnotations(mt).isEmpty()) {
       return false;
@@ -386,14 +383,9 @@ public class ClassWriter {
       return false;
     }
     StructRecordComponent component = optionalComponent.get();
-    if (!getAnnotations(component).isEmpty()) {
-      return false;
-    }
-    if (!descriptor.equals("()" + component.getDescriptor())) {
-      return false;
-    }
-
-    if (code.countLines() != 1) {
+    if (!getAnnotations(component).isEmpty() ||
+        !descriptor.equals("()" + component.getDescriptor()) ||
+        code.countLines() != 1) {
       return false;
     }
     String str = code.toString().trim();
@@ -967,8 +959,13 @@ public class ClassWriter {
 
             hideMethod = code.length() == 0 &&
               (clInit || dInit || hideConstructor(node, !typeAnnotations.isEmpty(), init, throwsExceptions, paramCount, flags)) ||
-              isSyntheticRecordConstructor(cl, mt, code, md, init, !typeAnnotations.isEmpty()) ||
-              isSyntheticRecordMethod(cl, mt, code, !typeAnnotations.isEmpty());
+              isSyntheticRecordMethod(cl, mt, code);
+
+            if (DecompilerContext.getOption(IFernflowerPreferences.HIDE_RECORD_GENERATED_METHODS)) {
+              hideMethod = hideMethod ||
+                isGeneratedRecordConstructor(cl, mt, code, md, init, !typeAnnotations.isEmpty()) ||
+                isGeneratedRecordAccessor(cl, mt, code, !typeAnnotations.isEmpty());
+            }
 
             buffer.append(code);
 
